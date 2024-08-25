@@ -22,6 +22,13 @@ compatible, as there are variations.
 This optional list goes on. You can decide after the first session. After
 that, it is mostly software and use cases.
 
+NOTE: The images used in this document are copied from the respective sites.
+They may be subject to copyright, I do not know. They are present just in case
+they change and I wanted to make sure they stayed the same for the duration,
+so you would have at least an idea of what it is supposed to look like. I
+don't know if there is any kind of copyright on them, I expect that some could
+copyrighted, but this usage could be considered fair use, as they are
+referencing the purchase location.
 
 === Amazon Parts List
 
@@ -68,37 +75,26 @@ a little higher and there are additional shipping charges.
 
 * https://www.pishop.ca/product/pl2303hx-usb-to-rs232-ttl-converter-cable-module[PL2303 USB to RS232 TTL Converter Cable Module]
 image:parts/apif60apz__39874.1554984210_db031639d7f148a6bc3254.jpg[USB TTL Cable,150,150]
-
 * https://www.pishop.ca/product/5ft-cat6-ethernet-cable-black[5FT Cat6 Ethernet Cable]
 image:parts/CS-PID-175__02792.1616090535_63873b9da1514aed9efdc.jpg[EthernetCable,150,150]
-
 * https://www.pishop.ca/product/raspberry-pi-3-model-b-armv8-with-1g-ram[Raspberry Pi 3 - Model B - ARMv8 with 1G RAM]
 image:parts/apihg5own__30315.1554987625_ce52c80ea4444f89adfc82.jpg[Pi3b,150,150]
-
 * https://www.pishop.ca/product/wall-adapter-power-supply-5-25v-dc-2-4a-usb-micro-b[Wall Adapter Power Supply - 5.1V DC 2.5A (USB Micro-B)]
 image:parts/api3sc6hm__51647.1554987871_3f94707c5c6343709c7fa5.jpg[PowerSupply,150,150]
-
 * https://www.pishop.ca/product/official-raspberry-pi-b23-case[Official Raspberry Pi Case&#44; White and Red (B+&#44; 2&#44; 3B&#44; 3B+)]
 image:parts/apizup4hr__98020.1554989006_097cb85e635f471aa4a791.jpg[3Bcase,150,150]
-
 * https://www.pishop.ca/product/optical-mouse[Optical Mouse]
 image:parts/835-1__83413.1620926912_680dace5b1da43bea499d514da.jpg[Mouse,150,150]
-
 * https://www.pishop.ca/product/hdmi-cable-flat-1m[HDMI Cable - Flat - 1M]
 image:parts/apivc08b2__85556.1554991320_3f2486c4d2424cf883161c.jpg[HDMI_cable,150,150]
-
 * https://www.pishop.ca/product/usb-console-stub-serial-adaptor-for-raspberry-pi[USB Console Stub - Serial adaptor for Raspberry Pi]
 image:parts/usb-colsole-stub__56187.15930106_bc8dae916b6c4f0ba.jpg[serial_adapter,150,150]
-
 * https://www.pishop.ca/product/usb-to-ttl-4-pin-wire[USB to TTL 4-pin
 Wire]
 image:parts/usb-to-4-pin-wire_2__61219.16013_721f9b3b6fd14b5b9.jpg[USB_TTL_4wire_serial,150,150]
-
 * https://www.pishop.ca/product/microsd-card-extreme-32-gb-class-10-blank-1[MicroSD Card Extreme - 32 GB - Class 10 - BLANK]
 image:parts/sandisk-sdsqxaf-032g-gn6ma-extre_a1d096af78bd484b9.jpg[microsdcard,150,150]
-
 * https://www.pishop.ca/product/temporary-product-3[Adafruit Mini Chiclet Keyboard USB Wired Black]
 image:parts/adafruit_keyboard.jpg[keyboard,150,150]
-
 * https://www.pishop.ca/product/3-5mm-trrs-male-to-3rca-male-cable-nickel-plated[3.5mm TRRS Male to 3RCA Male Cable&#44; Nickel Plated]
 image:parts/147_148_149__40866.1542985309.12_e2b44db8f9ee45279.jpg[TRRS Male to 3RCA,150,150]
