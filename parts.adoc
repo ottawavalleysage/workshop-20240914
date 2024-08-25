@@ -1,4 +1,4 @@
-== Project Parts
+== Workshop Parts
 
 Here are some suggested parts for the whole project, depending on how far you
 want to go with this. The bare minimum for the first session will be:
