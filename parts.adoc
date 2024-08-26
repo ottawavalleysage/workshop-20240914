@@ -1,7 +1,6 @@
 == Workshop Parts
 
-Here are some suggested parts for the whole project, depending on how far you
-want to go with this. The bare minimum for the first session will be:
+Here are some suggested parts for the whole project, depending on how far you want to go with this. The bare minimum for the first session will be:
 
 * Raspberry Pi 3B (or better, but I think most of us have a 3B)
 * A serial cable (several adapters are listed)
@@ -9,33 +8,19 @@ want to go with this. The bare minimum for the first session will be:
 * A USB flash disk (16GB will be plenty)
 * A sdcard reader (if you don't have one)
 
-Now, if you want to see anything on the Pi HDMI output, you need a 1080p
-monitor and a HDMI cable.
+Now, if you want to see anything on the Pi HDMI output, you need a 1080p monitor and a HDMI cable. That is a later phase, but you can look at things on the system if you want through normal methods.
 
-If you want to use a keyboard and mouse with the Pi, a USB keyboard and mouse
-would be useful.
+If you want to use a keyboard and mouse with the Pi, a USB keyboard and mouse would be useful.
 
-If you want to do the old school composite output, you will need the RCA
-adapter with the 4 pole 3.5mm plug. Make sure you get one that is Pi
-compatible, as there are variations.
+If you want to do the old school composite output, you will need the RCA adapter with the 4 pole 3.5mm plug. Make sure you get one that is Pi compatible, as there are variations. The docs may be wrong, but you need a composite system for it to work.
 
-This optional list goes on. You can decide after the first session. After
-that, it is mostly software and use cases.
+This optional list goes on for a bit. You can decide after the first session. After that, it is mostly software and use cases.
 
-NOTE: The images used in this document are copied from the respective sites.
-They may be subject to copyright, I do not know. They are present just in case
-they change and I wanted to make sure they stayed the same for the duration,
-so you would have at least an idea of what it is supposed to look like. I
-don't know if there is any kind of copyright on them, I expect that some could
-copyrighted, but this usage could be considered fair use, as they are
-referencing the purchase location.
+NOTE: The images used in this document are copied from the respective sites.  They may be subject to copyright, I do not know. They are present just in case they change and I wanted to make sure they stayed the same for the duration, so you would have at least an idea of what it is supposed to look like. I don't know if there is any kind of copyright on them, I expect that some could copyrighted, but this usage could be considered fair use, as they are referencing the purchase location.
 
 === Amazon Parts List
 
-The following are parts you can get from Amazon. I don't endorse any of them in
-particular, I just picked these as meeting the requirements. I have many of
-them in my collection of parts, but some of them may not be reliable,
-specifically the USB to serial devices. I have had some fail in the past.
+The following are parts you can get from Amazon. I don't endorse any of them in particular, I just picked these as meeting the requirements. I have many of them in my collection of parts, but some of them may not be reliable, specifically the USB to serial devices. I have had some fail in the past.
 
 * https://www.amazon.ca/dp/B07ZGFG3NP[Kingston 64GB microSDXC Canvas]
 image:parts/31qJ0ZLV3PL._SS135__564d5577b39b4c31a71d324f0bac41.jpg[Kingston
@@ -66,12 +51,12 @@ image:parts/samsung_usb_flash_64gb.jpg[samsung-bar-plus-64gb,100,100]
 image:parts/samsung_bar_64gb.jpg[Samsung 64GB USB storage,100,100]
 * https://www.amazon.ca/dp/B0C7GRCDD9[High-Speed Memory Card Reader 4in1 USB-C USB 3.0]
 image:parts/usb-card-reader.jpg[usb-card-reader,100,100]
+* https://www.amazon.ca/gp/product/B0C8S9WX1N[Raspberry Pi Power Supply with Integrated Switch Button - Stable 5V 3A Micro USB Adapter]
+image:parts/pi3b-ps-microusb-switch.jpg[pi3b-ps-switch,100,100]
 
 === PiShop.ca Parts List
 
-I also order from here a lot. I have not had a bad part yet, so I expect that
-they verify the parts or use a better class of suppliers. The prices tend to be
-a little higher and there are additional shipping charges.
+I also order from here a lot. I have not had a bad part yet, so I expect that they verify the parts or use a better class of suppliers. The prices tend to be a little higher and there are additional shipping charges.
 
 * https://www.pishop.ca/product/pl2303hx-usb-to-rs232-ttl-converter-cable-module[PL2303 USB to RS232 TTL Converter Cable Module]
 image:parts/apif60apz__39874.1554984210_db031639d7f148a6bc3254.jpg[USB TTL Cable,150,150]
