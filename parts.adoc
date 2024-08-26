@@ -6,7 +6,8 @@ Here are some suggested parts for the whole project, depending on how far you wa
 * A serial cable (several adapters are listed)
 * A microSD card (8GB or better, class 10)
 * A USB flash disk (16GB will be plenty)
-* A sdcard reader (if you don't have one)
+* A SD card reader (if you don't have one)
+* A power supply that provides at least 2.5A over microUSB
 
 Now, if you want to see anything on the Pi HDMI output, you need a 1080p monitor and a HDMI cable. That is a later phase, but you can look at things on the system if you want through normal methods.
 
