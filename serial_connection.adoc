@@ -11,7 +11,7 @@ from above with the USB ports at the bottom. You will want to connect GND to
 the third pin, RX to the fourth pin, and TX to the fifth pin. If you understand
 the pin layout, these are pins 6,8,10 on the Pi. 
 
-NOTE: Do not connect the Vcc wire (red). 
+WARNING: Do not connect the Vcc wire (red). 
 
 Depending on the device, your TX and RX
 wires are going to be different colours, but GND is usually black. The others
@@ -19,7 +19,9 @@ can be green, blue, or  white on most devices. The order is not important, as yo
 can flip them if the do not work and try again. If you received documentation
 with it, follow that layout.
 
-The picture below shows the connectivity. 
+The picture below shows the connectivity. If it is hard to read, it is due to
+the dark mode theme. The image is transparent and will look fine on a lighter
+background. It wasn't originally meant for viewing in github.
 
 image:images/Pi3_serial.svg[Raspberry Pi Serial Connection,800]
 
