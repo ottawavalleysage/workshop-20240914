@@ -1,0 +1,337 @@
+== Setup boot from USB
+
+The object of this part is to configure the Pi to boot from one of the USB
+ports. It can be done on older models with a microSD/SD card used as the
+initial boot and then transfer to USB, but the Pi 3 and later can do it
+natively. The Pi 3 needs to have a permanent change made to it for it to work,
+the Pi 4 and Pi 5 have an eeprom that can be set - almost a rudimentary BIOS.
+I don't think it quite classifies as a BIOS, but it may be in the boot loader.
+
+WARNING: If you plan on doing this for a long term install, you will want to
+change out the USB flash with a USB HDD. It really does not matter if it is
+spinning rust or SSD, but they are much more reliable over the long term. This
+is more of a fun project and the USB boot allows for a better experience.
+Remember that SD cards and thumb drives don't really have endurance ratings or
+proper wear leveling. You can also use the overlay method of running it, which
+uses RAM for the running drive and only writes changes back through the
+lucommit utility. This is a method of using the SD card or a flash drive in a
+more reliable manner, as there are no writes happening. It will reduse the
+amount of available memory though.
+
+=== Configuring the Raspberry Pi 3 to boot from USB
+
+I will be doing all of this from Linux - Fedora Core 40 to be exact. You can do
+all of the exercise with Windows or MacOS and the necessary bits installed. I
+want to use a variety of options, so that leaves FreeBSD out for now, as I do
+not know if the RaspberryPi Imager works on FreeBSD and variants. As this is a
+Linux based event, I'd expect you to use Linux.
+
+NOTE: If you want to use the imager from a GUI, feel free, I just wanted to
+show that we do not need to do it that way. This method allows for a full
+scrtipt if you want to try it out for future installs.
+
+Software needed:
+
+- raspberry pi imager
+- picocomm (or other terminal software like minicom)
+
+I'll provide the necessary commands as we go.
+
+=== Installing RaspberryPiOS Lite
+
+This is the "harder way", however it has the tools we would like to look at
+available immediately. It takes longer than doing it after the alpine install,
+but it doesn't take that long and might be easier to follow. We are going CLI
+mode all the way here.
+
+==== Let's get started
+
+Install picocom if you don't already have it installed.
+
+```
+sudo dnf -y install picocom
+```
+
+Assuming all went well, try it out with the `--help` command
+
+```
+$ picocom -h
+picocom v2023-04
+
+Compiled-in options:
+  TTY_Q_SZ is 0
+  HIGH_BAUD is enabled
+  USE_FLOCK is enabled
+  LINENOISE is enabled
+  HISTFILE is: .picocom_history
+  USE_CUSTOM_BAUD is enabled
+
+Usage is: picocom [options] <tty port device>
+Options are:
+  --<b>aud <baudrate>
+  --<f>low x (=soft,xon/xoff) | h (=hard) | n (=none)
+  --parit<y> o (=odd) | e (=even) | n (=none)
+  --<d>atabits 5 | 6 | 7 | 8
+  --sto<p>bits 1 | 2
+  --<T>xdelay <nsec>
+  --<e>scape <char>
+  --<n>o-escape
+  --e<c>ho
+  --no<i>nit
+  --no<r>eset
+  --hang<u>p
+  --no<l>ock
+  --<s>end-cmd <command>
+  --recei<v>e-cmd <command>
+  --imap <map> (input mappings)
+  --omap <map> (output mappings)
+  --emap <map> (local-echo mappings)
+  --lo<g>file <filename>
+  --inits<t>ring <string>
+  --e<x>it-after <msec>
+  --e<X>it
+  --lower-rts
+  --raise-rts
+  --lower-dtr
+  --raise-dtr
+  --<q>uiet
+  --<h>elp
+<map> is a comma-separated list of one or more of:
+  crlf : map CR --> LF
+  crcrlf : map CR --> CR + LF
+  igncr : ignore CR
+  lfcr : map LF --> CR
+  lfcrlf : map LF --> CR + LF
+  ignlf : ignore LF
+  bsdel : map BS --> DEL
+  delbs : map DEL --> BS
+  spchex : map special chars (excl. CR, LF & TAB) --> hex
+  tabhex : map TAB --> hex
+  crhex : map CR --> hex
+  lfhex : map LF --> hex
+  8bithex : map 8-bit chars --> hex
+  nrmhex : map normal ASCII chars --> hex
+<?> indicates the equivalent short option.
+Short options are prefixed by "-" instead of by "--".
+```
+
+NOTE: If you have issues later when trying to open a serial port, you can
+either `sudo` the command or add yourself to the dialout group on your system.
+The second approach is more in keeping with not running applications as root.
+Check to see what groups you are a member of with the `groups` command. If you
+are not a member of the dialout group, you can change this with the command
+`sudo usermod -aG dialout <username>` and you would need to either log out and
+back in again, issue the `newgroup` command with dialout as the arg, or start a
+new terminal with a login.
+
+Get and verify the imager software for linux - we want the Fedora version
+since the AppImage version does not have the same cli features.
+
+```
+sudo dnf -y install rpi-imager
+```
+
+Verify the checksum.
+
+```
+sudo rpi-imager --help
+```
+
+Get the lite version of the official OS to work with.
+
+```
+curl -O https://downloads.raspberrypi.com/raspios_lite_arm64/images/raspios_lite_arm64-2024-07-04/2024-07-04-raspios-bookworm-arm64-lite.img.xz
+```
+
+Get the signature.
+
+```
+curl -O https://downloads.raspberrypi.com/raspios_lite_arm64/images/raspios_lite_arm64-2024-07-04/2024-07-04-raspios-bookworm-arm64-lite.img.xz.sha256
+```
+
+Check the signature.
+
+```
+sha256sum -c 2024-07-04-raspios-bookworm-arm64-lite.img.xz.sha256
+```
+
+Make sure your microSD card is in your writer and make sure you know what the device is called.
+If the card is formatted, it probably auto-mounted on /run/media
+
+```
+lsblk
+```
+
+You will need to unmount that disk. The following commands assume it is /dev/sdb1
+
+```
+sudo umount /dev/sdb1
+```
+
+If there are additional partitions, they all need to be unmounted, so repeat
+the above command for each partition that is mounted.
+
+At this point, you should have /dev/sdb showing and any partitions also
+showing, but nothing mounted. Time to burn the image to the microSD card.
+
+```
+sudo rpi-imager --cli raspios-bookworm-arm64-lite.img.xz /dev/sdb
+```
+
+This may take a while, depending on the speed of your writer.
+
+Once the command finished, it will unmount and eject the microSD card. You will
+need to remove it and re-insert it prior to continuing. You should wait a few
+seconds prior to re-inserting it, as the automounter may be confused by the
+rapid state change. You could also explicitly eject the devive as well, with an
+`sudo eject /dev/sdb`
+
+After reinserting the microSD card, you should see two automounted disks. You
+want to use the `/run/media/<userid>/bootfs` partition for the next step. The
+`<userid>` mentioned is your login id on your device. The latest versions do
+not have the `pi` user available and on first boot it will do
+auto-initialization processes and unless we take this step, we may not be able
+to log in. It might do the right thing on the serial console, but I happened to
+have a HDMI cable plugged in and it decided I was commissioning it from the
+monitor and keyboard.
+
+The following commands will set up everything to get us going.
+
+```
+cd /run/media/<userid>/bootfs
+echo "dtoverlay=pi3-miniuart-bt" | sudo tee -a config.txt 
+echo "enable_uart=1" | sudo tee -a config.txt
+PASS=$(echo 'raspberry' | openssl passwd -6 -stdin)
+echo "pi:$PASS" | sudo tee userconf.txt
+echo "Compare the following..."
+echo $PASS; cat userconf.txt | awk -F: '{ print $2}'
+```
+NOTE: If you want to use the network later, but before you redo the system, you
+should issue the command `sudo touch ssh.txt`. You also need to have the
+network cable plugged in prior to reboot or it will not get an IP address.
+
+```
+sudo umount /dev/sdb2 /dev/sdb1
+sudo eject /dev/sdb
+```
+
+NOTE: You could verify that you unmounted the disks with the `lsblk` command before
+removing the microSD card
+
+You can now remove the microSD card form your writer.
+
+=== First Boot - RaspberryPiOS
+
+Insert the microSD card into the Pi and connect the serial device
+as described in the serial_connection.adoc file. Do not connect the power
+adapter yet.
+
+Launch your serial terminal software. I'm using picocom (very lightweight) and
+works quite well. It is not as full featured as minicom, but it works very well
+for this kind of activity.
+
+The connection parameters are 115200,8,n,1 - most of that being the default.
+
+If you understand that off the cuff, you must have serial port experiance. 
+
+Find out what tty device you have. It is probably `ttyUSB0`, but it may be
+`dev/ttyACM0` so check in advance by listing the tty devices.
+
+```
+ls /dev/tty*
+```
+
+Use that to determine the serial device you will use. It should stand out as
+looking different from the rest.
+
+So start your serial communication software and we can get started.
+
+```
+picocom --baud 115200 /dev/ttyUSB0
+```
+
+Once you see the terminal is ready...
+
+```
+Type [C-a] [C-h] to see available commands
+Terminal ready
+```
+
+It is time. Power on your Pi. It may take a moment to see anything happening on
+the screen since the Pi will boot, expand the flash, do a run-once type setup
+and then reboot..
+
+After a short time, you will see a message stating that it has rebooted. Then
+the normal boot messages. Eventually you will be greeted with:
+
+```
+Debian GNU/Linux 12 raspberrypi ttyAMA0
+
+raspberrypi login: 
+```
+
+Log in with the `pi` user and the `raspberry` password you set earlier.
+
+iIf you do a `lsblk` command, you will see something like this:
+
+```
+pi@raspberrypi:~$ lsblk
+NAME        MAJ:MIN RM  SIZE RO TYPE MOUNTPOINTS
+mmcblk0     179:0    0  7.4G  0 disk 
+├─mmcblk0p1 179:1    0  512M  0 part /boot/firmware
+└─mmcblk0p2 179:2    0  6.9G  0 part /
+```
+
+Now we can check to see if the Pi has the boot from USB set. This command could
+be installed later, but this is a little more like the experience most people
+would go through. If you have a 3B+, it can do this natively. If it is a 3B, we
+need to flip a bit to make it happen.
+
+WARNING: To enable the USB boot bit, the Raspberry Pi 3 needs to be booted from
+an SD card with a config option to enable USB boot mode. Once this bit has been
+set, the SD card is no longer required. Note that any change you make to the
+OTP is permanent and cannot be undone.
+
+The Pi has a utility command that allows us to see all kinds of things in the system called `vcgencmd` and it has a lot of options. We are interested in the data from the `otp_dump` section - specifically the line that starts with 17:, as the content of that will tell us if we are set for USB boot.
+
+So type:
+
+```
+vcgencmd otp_dump | grep 17:
+```
+
+and check the output. If it is not USB enabled, it should look like this:
+
+```
+pi@raspberrypi:~$ vcgencmd otp_dump | grep 17:
+17:1020000a
+```
+
+We want to correct that. The best part is that this is pretty easy to accomplish, just issue the following command:
+
+WARNING: REPEAT This is a one time change and is not reversible.
+
+```
+echo "program_usb_boot_mode=1" | sudo tee -a /boot/firmware/config.txt
+```
+
+Now you just reboot...
+
+```
+sudo shutdown -r now
+```
+
+After you see the boot messages and you get the login prompt, log in and issue the following command:
+
+```
+vcgencmd otp_dump | grep 17:
+```
+
+This time it should look like this:
+
+```
+pi@raspberrypi:~$ vcgencmd otp_dump | grep 17:
+17:3020000a
+```
+
+Congratulations, the Pi is now configured to boot from USB. Shut it down!
