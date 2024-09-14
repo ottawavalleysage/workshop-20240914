@@ -1,0 +1,470 @@
+== Alpine Install
+
+This will go a lot easier, but may be a little harder to follow. Questions are
+always good.
+
+At this point, we have a Pi 3B that can boot from USB. There is a bit of a
+difference in the install for Alpine vs. Raspberry Pi OS. Mostly that we don't
+create a boot image as such. You can clone the USB stick afterward, but Alpine
+is done a little different and this will be a new way of looking at an OS
+install.
+
+The Pi series prior to the 4 require a MS DOS FAT file system to read the
+initial boot information. That provides a way to tune things without having the
+system live, and allows for a number of ways you can mess it all up. You saw
+that with the Pi OS, as we manipulated the boot partition on the microSD card
+to enable a few things so we could start the system headless and be able to log
+in. We will be doing something similar here, but this is the normal proceure,
+regardless of using serial ports or the console.
+
+=== Linux Packages Required
+
+This part is pretty easy, you need the following packages in order to perform
+the next series of operations. You may have them already or you need to install
+them. It should go pretty fast. Chances are you have the first three already.
+
+- parted
+- e2fsprogs
+- lsblk
+- dosfstools
+
+```
+user@demo$ sudo dnf install parted e2fsprogs dosfstools util-linux
+[sudo] password for user: 
+Last metadata expiration check: 0:00:47 ago on Sun 08 Sep 2024 08:28:42 PM.
+Package parted-3.6-4.fc40.x86_64 is already installed.
+Package e2fsprogs-1.47.0-5.fc40.x86_64 is already installed.
+Package dosfstools-4.2-11.fc40.x86_64 is already installed.
+Package util-linux-2.40.1-1.fc40.x86_64 is already installed.
+Dependencies resolved.
+Nothing to do.
+Complete!
+```
+
+=== Prep the USB Stick
+
+Insert your USb stick into a convenient port. If you have your reader plugged into one, that might be a great candidate. If it is internal, then you probably already have one ready to go.
+
+NOTE: While it may be obvious, the USB stick needs to be presented to the Pi as a USB A connection, so either you have a non-USB-C stick or you have an adapter.
+
+Once it is plugged in, either check the `dmesg` output or (easier) check `lsblk` which will tell you about the disks and the mountpoints.
+
+```
+user@demo$ lsblk
+NAME        MAJ:MIN RM   SIZE RO TYPE MOUNTPOINTS
+sda           8:0    1  28.7G  0 disk 
+└─sda1        8:1    1   487M  0 part /run/media/user/28B3-83A2
+zram0       252:0    0     8G  0 disk [SWAP]
+nvme0n1     259:0    0 465.8G  0 disk 
+├─nvme0n1p1 259:1    0   600M  0 part /boot/efi
+├─nvme0n1p2 259:2    0     1G  0 part /boot
+└─nvme0n1p3 259:3    0 464.2G  0 part /home
+                                      /
+```
+
+So unmount anything that auto-mounted
+
+```
+user@demo$ sudo umount /dev/sda1
+user@demo$ lsblk
+NAME        MAJ:MIN RM   SIZE RO TYPE MOUNTPOINTS
+sda           8:0    1  28.7G  0 disk 
+└─sda1        8:1    1   487M  0 part 
+zram0       252:0    0     8G  0 disk [SWAP]
+nvme0n1     259:0    0 465.8G  0 disk 
+├─nvme0n1p1 259:1    0   600M  0 part /boot/efi
+├─nvme0n1p2 259:2    0     1G  0 part /boot
+└─nvme0n1p3 259:3    0 464.2G  0 part /home
+                                      /
+```
+
+Now, you need to properly partition the USB stick. We will use `parted` for
+this today, which might be the first time any of you have seen it.
+
+Take a look at the partition table
+
+```
+sudo parted /dev/sda --script -- print
+```
+
+Which in my case looks like this:
+
+```
+user@demo$ sudo parted /dev/sda --script -- print
+Model:  USB  SanDisk 3.2Gen1 (scsi)
+Disk /dev/sda: 30.8GB
+Sector size (logical/physical): 512B/512B
+Partition Table: msdos
+Disk Flags: 
+
+Number  Start   End    Size   Type     File system  Flags
+ 1      1049kB  512MB  511MB  primary  fat16        boot, lba
+
+```
+
+Rather than go through it line by line, we are going to:
+
+- Delete any existing partitions
+- Set the label to msdos
+- Create the first partition (MBR) as 512M, fat32
+- Create the second as ext4, roughly 28.5GB
+- Create a swap partition with the remaining disk
+- Set partition 1 as bootable
+- Set partition 1 as LBA
+- Verify the layout
+
+The commands are:
+
+```
+sudo parted /dev/sda --script rm 1
+sudo parted /dev/sda --script -- mklabel msdos
+sudo parted /dev/sda --script -- mkpart primary fat32 1 512M
+sudo parted /dev/sda --script -- mkpart primary ext4 512M 29G
+sudo parted /dev/sda --script -- mkpart primary linux-swap 29G 100%
+sudo parted /dev/sda --script -- set 1 boot on
+sudo parted /dev/sda --script -- set 1 lba on
+sudo parted /dev/sda --script -- print
+```
+
+Now you need to format the partitions properly.
+
+```
+sudo mkfs.vfat -F32 -I /dev/sda1
+sudo mkfs.ext4 /dev/sda2
+sudo mkswap -L swap /dev/sda3
+```
+
+The USB stick is now ready to be used. Mount the first partition on /mnt. If there is something blocking it, create a new directory and mount it there.
+
+```
+sudo mount /dev/sda1 /mnt
+```
+
+Check to make sure it mounted before continuing.
+
+```
+user@demo$ sudo mount /dev/sda1 /mnt
+user@demo$ lsblk
+NAME        MAJ:MIN RM   SIZE RO TYPE MOUNTPOINTS
+sda           8:0    1  28.7G  0 disk 
+├─sda1        8:1    1   487M  0 part /mnt
+├─sda2        8:2    1  26.5G  0 part 
+└─sda3        8:3    1   1.7G  0 part 
+zram0       252:0    0     8G  0 disk [SWAP]
+nvme0n1     259:0    0 465.8G  0 disk 
+├─nvme0n1p1 259:1    0   600M  0 part /boot/efi
+├─nvme0n1p2 259:2    0     1G  0 part /boot
+└─nvme0n1p3 259:3    0 464.2G  0 part /home
+                                      /
+```
+
+=== Get the Alpine OS for Raspberry Pi (64bit)
+
+Time to get the Alpine OS for the Raspberry Pi.  The Pi 3 works as a 64bit OS
+and that is the recommended OS (at least for Alpine).
+
+The Alpine Linux project keeps the download list at
+https://alpinelinux.org/downloads/[Alpine Linux Downloads]. You can verify
+there, but we will be taking advantage of the fact that it is all sitting on
+the content delivery network (the download links point there). The version we
+will be using is v3.20.3, released on Sept 6, 2024.
+
+I am assuming you have created a project directory by now, but if you have not,
+this might be a good time. We will be doing a few downloads and having a
+working directory will keep the sprawl to a minimum.
+
+The next steps are to:
+
+- Download Alpine
+- Download the ckecksum
+- Verify the download
+- Extract the download to the USB stick partition mounted on /mnt
+
+I'm going to use the silent flag on my command, as the download is pretty fast.
+
+The commands are:
+
+```
+curl -s -O https://dl-cdn.alpinelinux.org/alpine/v3.20/releases/aarch64/alpine-rpi-3.20.3-aarch64.tar.gz
+
+curl -s -O https://dl-cdn.alpinelinux.org/alpine/v3.20/releases/aarch64/alpine-rpi-3.20.3-aarch64.tar.gz.sha512
+
+sha512sum -c alpine-rpi-3.20.3-aarch64.tar.gz.sha512
+
+sudo tar zxf ./alpine-rpi-3.20.3-aarch64.tar.gz -C /mnt --no-same-owner
+```
+
+Verify that it extracted by looking at the `/mnt` directory.
+
+```
+ls /mnt
+```
+
+Assuming all went well, it should look like this:
+
+```
+user@demo$ ls /mnt
+apks                      bcm2711-rpi-cm4s.dtb        bcm2837-rpi-zero-2-w.dtb
+bcm2710-rpi-2-b.dtb       bcm2712d0-rpi-5-b.dtb       boot
+bcm2710-rpi-3-b.dtb       bcm2712-rpi-5-b.dtb         bootcode.bin
+bcm2710-rpi-3-b-plus.dtb  bcm2712-rpi-cm5-cm4io.dtb   cmdline.txt
+bcm2710-rpi-cm3.dtb       bcm2712-rpi-cm5-cm5io.dtb   config.txt
+bcm2710-rpi-zero-2.dtb    bcm2712-rpi-cm5l-cm4io.dtb  fixup4.dat
+bcm2710-rpi-zero-2-w.dtb  bcm2712-rpi-cm5l-cm5io.dtb  fixup.dat
+bcm2711-rpi-400.dtb       bcm2837-rpi-3-a-plus.dtb    overlays
+bcm2711-rpi-4-b.dtb       bcm2837-rpi-3-b.dtb         start4.elf
+bcm2711-rpi-cm4.dtb       bcm2837-rpi-3-b-plus.dtb    start.elf
+bcm2711-rpi-cm4-io.dtb    bcm2837-rpi-cm3-io3.dtb
+```
+
+
+
+So now we need to make a few boot modifications in order to continue on the Pi. Only two commands this time in order to use the serial console.
+
+```
+cat /mnt/cmdline.txt
+sudo sed -i.bak 's/=tty1/=serial0,115200/' /mnt/cmdline.txt
+cat /mnt/cmdline.txt
+echo "enable_uart=1" | sudo tee -a /mnt/usercfg.txt
+```
+
+Now we unmount the /mnt partition, eject the USB stick, and remove it.
+
+Prep of the stick is complete.
+
+=== Booting and Installing Alpine
+
+At this point, your Pi should not have a microSD card installed or a USB stick.
+Your serial adapter should still be connected.
+
+Insert the USB stick in any of the USB ports. Do not power on yet.
+
+The rest happens over the serial port, so you need to get your terminal
+software up and running.
+
+```
+picocom --baud 115200 /dev/ttyUSB0
+```
+
+Once you see that the terminal is ready, power on the Pi
+
+It will take a moment, but the startup process is much faster. Once you get to
+the login prompt, login as `root`. There will not be a password yet.
+
+```
+Welcome to Alpine Linux 3.20
+Kernel 6.6.49-0-rpi on an aarch64 (/dev/ttyS0)
+
+localhost login: 
+```
+
+This is where the install is quite a bit different than you are used to. The
+x86 and x86_64 are similar, but they don't need the additional steps to ensure
+that the first partition gets mounted in the right place.
+
+There are two options when doing an install (well, three really), but the third
+is just running the sections of the first one individually. Alpine allows for
+an answer file to be used for the configuration. Doing it "manually" the first
+time will help you understand how the answer file placeholders would be used.
+
+Time to get started.
+
+run the `setup-alpine` command. You will have to answer the questions and we
+will not configure some items at this point. We will prep the disk after the
+initial configuration. If you make a mistake and want to start over, type
+`CTRL-C` to exit the installer.
+
+WARNING: Do not select the defaults for all the questions, as we will be doing
+a few different items on the Pi and taking the defaults will change the way it
+is configured. You will not add a user at this time, you probably will not use
+the same time zone as me, and you must not use the disk at the end. Pay
+attention to my example session.
+
+My answers to the questions are:
+
+```
+ ALPINE LINUX INSTALL
+----------------------
+
+ Hostname
+----------
+Enter system hostname (fully qualified form, e.g. 'foo.example.org') [localhost] project1
+
+ Interface
+-----------
+Available interfaces are: eth0 wlan0.
+Enter '?' for help on bridges, bonding and vlans.
+Which one do you want to initialize? (or '?' or 'done') [eth0] 
+Ip address for eth0? (or 'dhcp', 'none', '?') [dhcp] 
+Available interfaces are: wlan0.
+Enter '?' for help on bridges, bonding and vlans.
+Which one do you want to initialize? (or '?' or 'done') [wlan0] done
+Do you want to do any manual network configuration? (y/n) [n] n
+udhcpc: started, v1.36.1
+udhcpc: broadcasting discover
+udhcpc: broadcasting discover
+udhcpc: broadcasting select for 100.90.150.161, server 100.90.100.1
+udhcpc: lease of 100.90.150.161 obtained from 100.90.100.1, lease time 86400
+
+ Root Password
+---------------
+Changing password for root
+New password: 
+Retype password: 
+passwd: password for root changed by root
+
+ Timezone
+----------
+Africa/            Egypt              Iran               Poland
+America/           Eire               Israel             Portugal
+Antarctica/        Etc/               Jamaica            ROC
+Arctic/            Europe/            Japan              ROK
+Asia/              Factory            Kwajalein          Singapore
+Atlantic/          GB                 Libya              Turkey
+Australia/         GB-Eire            MET                UCT
+Brazil/            GMT                MST                US/
+CET                GMT+0              MST7MDT            UTC
+CST6CDT            GMT-0              Mexico/            Universal
+Canada/            GMT0               NZ                 W-SU
+Chile/             Greenwich          NZ-CHAT            WET
+Cuba               HST                Navajo             Zulu
+EET                Hongkong           PRC                leap-seconds.list
+EST                Iceland            PST8PDT            posixrules
+EST5EDT            Indian/            Pacific/
+
+Which timezone are you in? [UTC] Canada/Eastern
+
+ * WARNING: clock skew detected!
+ * Seeding random number generator ...
+ * Saving 256 bits of creditable seed for next boot
+ [ ok ]
+ * WARNING: clock skew detected!
+ * Starting busybox crond ...
+ [ ok ]
+
+ Proxy
+-------
+HTTP/FTP proxy URL? (e.g. 'http://proxy:8080', or 'none') [none] 
+
+ Network Time Protocol
+-----------------------
+Mon Apr  8 02:17:29 EDT 2024
+Which NTP client to run? ('busybox', 'openntpd', 'chrony' or 'none') [chrony] 
+ * service chronyd added to runlevel default
+ * Starting chronyd ...
+ [ ok ]
+
+ APK Mirror
+------------
+ (f)    Find and use fastest mirror
+ (s)    Show mirrorlist
+ (r)    Use random mirror
+ (e)    Edit /etc/apk/repositories with text editor
+ (c)    Community repo enable
+ (skip) Skip setting up apk repositories
+
+Enter mirror number or URL: [1] 
+
+Added mirror dl-cdn.alpinelinux.org
+Updating repository indexes... done.
+
+ User
+------
+Setup a user? (enter a lower-case loginname, or 'no') [no] 
+Which ssh server? ('openssh', 'dropbear' or 'none') [openssh] 
+Allow root ssh login? ('?' for help) [prohibit-password] yes
+Enter ssh key or URL for root (or 'none') [none] 
+ * service sshd added to runlevel default
+ * Caching service dependencies ...
+ [ ok ]
+ssh-keygen: generating new host keys: RSA ECDSA ED25519 
+ * Starting sshd ...
+ [ ok ]
+
+ Disk & Install
+----------------
+No disks available. Try boot media /media/sda1? (y/n) [n] 
+Enter where to store configs ('floppy', 'sda1', 'usb' or 'none') [sda1] none
+Enter apk cache directory (or '?' or 'none') [/media/usb/cache] none
+```
+
+Now we can add a package, but this is not permanent yet.
+
+```
+apk add lsblk
+```
+
+We are adding lsblk so you can see that the partitions are as we set them up.
+
+Run the following commands, in order. Feel free to ask questions as you do
+them.
+
+```
+lsblk
+sed -i 's/^#http/http/' /etc/apk/repositories
+echo "makestep 1.0 3" >> etc/chrony/chrony.conf
+apk update && apk upgrade
+mount /dev/sda2 /mnt
+FORCE_BOOTFS=1 setup-disk -m sys /mnt
+mount -o remount,rw /media/sda1
+cd /mnt
+rm -f /media/sda1/boot/*
+rm boot/boot
+cp -R boot/* /media/sda1/boot
+rm -rf boot
+mkdir media/sda1
+ln -s media/sda1/boot boot
+cat etc/fstab
+sed -i '2i /dev/sda1 /media/sda1 vfat defaults 0 0' etc/fstab
+sed -i '3i /dev/sda3 none        swap sw       0 0' etc/fstab
+sed -i '/cdrom/d' etc/fstab
+sed -i '/floppy/d' etc/fstab
+cat etc/fstab
+cat /media/sda1/cmdline.txt
+sed -i 's/$/ root=\/dev\/sda2 /' /media/sda1/cmdline.txt
+sed -i "s/$/ cgroup_enable=cpuset cgroup_enable=memory cgroup_memory=1/" /media/sda1/cmdline.txt
+cat /media/sda1/cmdline.txt
+cat /media/sda1/config.txt
+cat /media/sda1/usercfg.txt
+```
+
+At this point, we have a system that is installed and ready to reboot.
+
+Reboot it!
+
+```
+sync
+reboot
+```
+
+Watch the shutdown and reboot process.
+
+When it has finished, login. Notice it is asking for your password now?
+
+Type the `free` command, it will give you a summary of the memory.
+
+```
+project1:~# free -h
+              total        used        free      shared  buff/cache   available
+Mem:         908.1M       35.2M      821.2M      104.0K       51.7M      857.5M
+Swap:          1.7G           0        1.7G
+```
+
+Notice how much RAM is in use?
+
+Check out the disk space.
+
+```
+project1:~# df -h
+Filesystem                Size      Used Available Use% Mounted on
+devtmpfs                 10.0M         0     10.0M   0% /dev
+shm                     454.0M         0    454.0M   0% /dev/shm
+/dev/sda2                25.9G    292.3M     24.3G   1% /
+tmpfs                   181.6M    104.0K    181.5M   0% /run
+/dev/sda1               486.0M     62.0M    424.1M  13% /media/sda1
+tmpfs                   454.0M         0    454.0M   0% /tmp
+```
+
+=== Finished!
+
+Congratulations, you have a Raspberry Pi 3 running 64 bit Alpine booting and running from a USB stick.
