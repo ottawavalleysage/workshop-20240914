@@ -9,15 +9,18 @@ create a boot image as such. You can clone the USB stick afterward, but Alpine
 is done a little different and this will be a new way of looking at an OS
 install.
 
-The Pi series prior to the 4 require a MS DOS FAT file system to read the
-initial boot information. That provides a way to tune things without having the
-system live, and allows for a number of ways you can mess it all up. You saw
-that with the Pi OS, as we manipulated the boot partition on the microSD card
-to enable a few things so we could start the system headless and be able to log
-in. We will be doing something similar here, but this is the normal proceure,
-regardless of using serial ports or the console.
+The Pi series prior to the 4 require a MS DOS FAT file system on an external
+device (SD, USB, etc.) to read the initial boot information. That provides a
+way to tune things without having the system live, and allows for a number of
+ways you can mess it all up. You saw that with the Pi OS, as we manipulated the
+boot partition on the microSD card to enable a few things so we could start the
+system headless and be able to log in. We will be doing something similar here,
+but this is the normal proceure, regardless of using serial ports or the
+console.
 
 === Linux Packages Required
+
+NOTE: This portion is performed on your normal system, not the Pi.
 
 This part is pretty easy, you need the following packages in order to perform
 the next series of operations. You may have them already or you need to install
@@ -43,11 +46,31 @@ Complete!
 
 === Prep the USB Stick
 
-Insert your USb stick into a convenient port. If you have your reader plugged into one, that might be a great candidate. If it is internal, then you probably already have one ready to go.
+Prior to inserting the USB stick, make sure you know your disk layout. The upcoming series of commands can potentially wipe your OS.
+
+```
+lsblk
+```
+
+Insert your USB stick into a convenient port. If you have your reader plugged
+into one, that might be a great candidate. If it is internal, then you probably
+already have one ready to go.
+
+After plugging in the USB stick, do another `lsblk` command so you can identify
+the new device. You can also type `sudo dmesg -T` to see the last device
+plugged in was and what device it was assigned.
+
+```
+lsblk
+```
+
+or
+
+```
+sudo dmesg -T
+```
 
 NOTE: While it may be obvious, the USB stick needs to be presented to the Pi as a USB A connection, so either you have a non-USB-C stick or you have an adapter.
-
-Once it is plugged in, either check the `dmesg` output or (easier) check `lsblk` which will tell you about the disks and the mountpoints.
 
 ```
 user@demo$ lsblk
@@ -402,7 +425,7 @@ them.
 ```
 lsblk
 sed -i 's/^#http/http/' /etc/apk/repositories
-echo "makestep 1.0 3" >> etc/chrony/chrony.conf
+echo "makestep 1.0 3" >> /etc/chrony/chrony.conf
 apk update && apk upgrade
 mount /dev/sda2 /mnt
 FORCE_BOOTFS=1 setup-disk -m sys /mnt
@@ -416,7 +439,7 @@ mkdir media/sda1
 ln -s media/sda1/boot boot
 cat etc/fstab
 sed -i '2i /dev/sda1 /media/sda1 vfat defaults 0 0' etc/fstab
-sed -i '3i /dev/sda3 none        swap sw       0 0' etc/fstab
+sed -i '3i /dev/sda3 none        swap defaults 0 0' etc/fstab
 sed -i '/cdrom/d' etc/fstab
 sed -i '/floppy/d' etc/fstab
 cat etc/fstab
