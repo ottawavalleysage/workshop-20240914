@@ -175,7 +175,7 @@ At this point, you should have /dev/sdb showing and any partitions also
 showing, but nothing mounted. Time to burn the image to the microSD card.
 
 ```
-sudo rpi-imager --cli raspios-bookworm-arm64-lite.img.xz /dev/sdb
+sudo rpi-imager --cli 2024-07-04-raspios-bookworm-arm64-lite.img.xz /dev/sdb
 ```
 
 This may take a while, depending on the speed of your writer.
