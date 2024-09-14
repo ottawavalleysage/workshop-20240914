@@ -223,16 +223,8 @@ You can now remove the microSD card form your writer.
 === First Boot - RaspberryPiOS
 
 Insert the microSD card into the Pi and connect the serial device
-as described in the serial_connection.adoc file. Do not connect the power
-adapter yet.
-
-Launch your serial terminal software. I'm using picocom (very lightweight) and
-works quite well. It is not as full featured as minicom, but it works very well
-for this kind of activity.
-
-The connection parameters are 115200,8,n,1 - most of that being the default.
-
-If you understand that off the cuff, you must have serial port experiance. 
+as described in the serial_connection.adoc file. Connect the USB portion to
+your computer (not the PI). Do not connect the power adapter yet.
 
 Find out what tty device you have. It is probably `ttyUSB0`, but it may be
 `dev/ttyACM0` so check in advance by listing the tty devices.
@@ -240,6 +232,13 @@ Find out what tty device you have. It is probably `ttyUSB0`, but it may be
 ```
 ls /dev/tty*
 ```
+The connection parameters are 115200,8,n,1 - most of that being the default.
+
+If you understand that off the cuff, you must have serial port experiance. 
+
+Launch your serial terminal software. I'm using picocom (very lightweight) and
+works quite well. It is not as full featured as minicom, but it works very well
+for this kind of activity.
 
 Use that to determine the serial device you will use. It should stand out as
 looking different from the rest.
