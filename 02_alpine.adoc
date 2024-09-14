@@ -449,6 +449,7 @@ sed -i "s/$/ cgroup_enable=cpuset cgroup_enable=memory cgroup_memory=1/" /media/
 cat /media/sda1/cmdline.txt
 cat /media/sda1/config.txt
 cat /media/sda1/usercfg.txt
+rc-update add swap boot 
 ```
 
 At this point, we have a system that is installed and ready to reboot.
