@@ -449,7 +449,6 @@ sed -i "s/$/ cgroup_enable=cpuset cgroup_enable=memory cgroup_memory=1/" /media/
 cat /media/sda1/cmdline.txt
 cat /media/sda1/config.txt
 cat /media/sda1/usercfg.txt
-rc-update add swap boot 
 ```
 
 At this point, we have a system that is installed and ready to reboot.
@@ -465,7 +464,15 @@ Watch the shutdown and reboot process.
 
 When it has finished, login. Notice it is asking for your password now?
 
-Type the `free` command, it will give you a summary of the memory.
+Since we did not have `/dev/sda2` on `/`, we need to do one more thing right
+now, enable and configure swap on boot:
+
+```
+swapon -a
+rc-update add swap boot
+```
+
+Type the `free` command, it will give you a summary of the memory. 
 
 ```
 project1:~# free -h
@@ -489,6 +496,28 @@ tmpfs                   181.6M    104.0K    181.5M   0% /run
 tmpfs                   454.0M         0    454.0M   0% /tmp
 ```
 
+One more reboot to ensure swap starts properly.
+
+```
+sync
+reboot
+```
+
+When it has rebooted, log in again abd check for swap.
+
+```
+free -h
+```
+
+```
+project1:~# free -h
+              total        used        free      shared  buff/cache   available
+Mem:         908.1M       35.7M      822.8M      104.0K       49.6M      857.1M
+Swap:          1.7G           0        1.7G
+```
+
 === Finished!
 
-Congratulations, you have a Raspberry Pi 3 running 64 bit Alpine booting and running from a USB stick.
+Congratulations, you have a Raspberry Pi 3 running 64 bit Alpine booting and
+running from a USB stick.
+
