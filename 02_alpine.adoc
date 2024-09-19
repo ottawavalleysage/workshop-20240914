@@ -469,6 +469,7 @@ now, enable and configure swap on boot:
 
 ```
 swapon -a
+sleep 3
 rc-update add swap boot
 ```
 
