@@ -1,0 +1,370 @@
+== Alpine Configuration
+
+This part should be pretty quick to complete.
+
+=== Assumptions
+
+- You were successful with the first two parts
+- You have a working internet connection and a wired network
+- You have your Pi connected to the wired network
+
+=== Software Installation
+
+You should be connected to the serial console of the Pi as root and it should
+be powered on. If not, take care of that now.
+
+Since we setup the package manager previously, we should add a few packages:
+
+- git
+- vim
+- lsblk (if it is not already installed)
+
+```
+apk add git vim lsblk doas
+```
+
+So time for a digression on Alpine. Alpine does not use sudo by default, it
+uses a command called `doas` which has a configuration system similar to sysctl
+or sudo. In this case, we have `/etc/doas.conf` as well as
+`/etc/doas.d/doas.conf` where you can add a number of conf files. If you look
+in the `/etc/doas.d/doas.conf` you will see that members of the `wheel` group
+have doas capability. Feel free to read up on it later if you want the details
+and diffrent ways to configure it. We will be creating a non root user next so
+that we can stop logging in as root.
+
+Create the doas configuration, as it is empty by default.
+
+```
+echo "permit persist :wheel" > /etc/doas.d/doas.conf
+```
+
+Once again, slight differences in how we manage users. Add a user for yourself
+like this:
+
+```
+adduser -g "User Name" -s /bin/ash userid
+```
+
+You can pick what you will put in here, I typically just add myself for
+convenience. We will add a service user in a later step.
+
+In order to allow your user to do things as root, you need to add it to the `wheel` group. 
+
+```
+adduser userid wheel
+```
+
+See, different from RHEL.
+
+At this point, you have all of the basics you need to get started on making this an appliance system.
+
+First, have a look at how much disk space you are using:
+
+```
+df -h
+```
+
+te a bit smaller than an install you are used to isn't it? We will be adding more software later, but this is the core of what we need for operation.
+
+=== Docker Installation
+
+Yes, docker runs under Alpine and runs on a Pi.
+
+Installing docker is pretty easy:
+
+```
+apk add docker docker-cli docker-compose
+```
+
+This shouldn't take too long. We will probably take the longest, as we are
+sharing a slow gateway connection in the boardroom.
+
+Once docker is installed, you need to add your user to the docker group to
+allow you to use docker. I am aware that we are using podman at work for
+similar tasks, but I have not attempted to use it on Alpine yet. It is
+available, but since I am new to doing this as well, I'm sticking to the
+simpler implemmentation. We can revisit with podman another time.
+
+```
+adduser userid docker
+```
+
+Docker is not yet usable, so we need to add docker to the startup services, and
+start it so we can test the install.
+
+```
+rc-update add docker
+rc-service docker start
+# This is to ensure that you give the daemon time to start before the next
+# command 
+sleep 3
+```
+Remember, Alpine does not use systemd.
+
+Assuming the above commands did not cause you any grief, test the docker
+install with the hello-world container.
+
+```
+docker run hello-world
+```
+
+Your session should look like this:
+
+```
+# docker run hello-world
+Unable to find image 'hello-world:latest' locally
+latest: Pulling from library/hello-world
+478afc919002: Pull complete 
+Digest: sha256:91fb4b041da273d5a3273b6d587d62d518300a6ad268b28628f74997b93171b2
+Status: Downloaded newer image for hello-world:latest
+
+Hello from Docker!
+This message shows that your installation appears to be working correctly.
+
+To generate this message, Docker took the following steps:
+ 1. The Docker client contacted the Docker daemon.
+ 2. The Docker daemon pulled the "hello-world" image from the Docker Hub.
+    (arm64v8)
+ 3. The Docker daemon created a new container from that image which runs the
+    executable that produces the output you are currently reading.
+ 4. The Docker daemon streamed that output to the Docker client, which sent it
+    to your terminal.
+
+To try something more ambitious, you can run an Ubuntu container with:
+ $ docker run -it ubuntu bash
+
+Share images, automate workflows, and more with a free Docker ID:
+ https://hub.docker.com/
+
+For more examples and ideas, visit:
+ https://docs.docker.com/get-started/
+
+#
+```
+
+While we are at it, check your disk usage again. I expect it will still be much
+lower than you expect it to be.
+
+If the docker test run didn't work, we should pause for troubleshooting.
+
+=== Test your userid
+
+Logout from the root account. Once you get the login prompt, login as your userid.
+
+Once logged in, you should test that you can operate with root capability. The next command will reboot the Pi, which will prove a couple of things:
+
+. You can run commands as root with `doas`
+. The docker system will start up automatically after a reboot
+
+```
+doas reboot
+```
+
+There will be a pause and the shutdown will happen. It should look something
+like this:
+
+```
+scott5:~$ doas reboot
+doas (scott5@pi-emu) password:
+scott5:~$ [ 5130.924070] reboot: Restarting system
+[    0.000000] Booting Linux on physical CPU 0x0000000000 [0x411fd070]
+[    0.000000] Linux version 6.6.48-0-lts (buildozer@build-edge-aarch64) (gcc (Alpine 14.2.0) 14.2.0, GNU ld (GNU Binutils) 2.43.1) #1-Alpine SMP PREEMPT_DYNAMIC 2024-08-29 21:33:30
+[    0.000000] random: crng init done
+[    0.000000] Machine model: linux,dummy-virt
+[    0.000000] efi: UEFI not found.
+[    0.000000] NUMA: No NUMA configuration found
+[    0.000000] NUMA: Faking a node at [mem 0x0000000040000000-0x000000007fffffff]
+
+ _ __ ___   __ _ _ __  _   _    __| | ___| | ___| |_ ___  __| |
+| '_ ` _ \ / _` | '_ \| | | |  / _` |/ _ \ |/ _ \ __/ _ \/ _` |
+| | | | | | (_| | | | | |_| | | (_| |  __/ |  __/ ||  __/ (_| |
+|_| |_| |_|\__,_|_| |_|\__, |  \__,_|\___|_|\___|\__\___|\__,_|
+                       |___/                                   
+ _ _                 
+| (_)_ __   ___  ___ 
+| | | '_ \ / _ \/ __|
+| | | | | |  __/\__ \
+|_|_|_| |_|\___||___/
+                     
+
+ * Mounting root: [    3.458735] virtio-pci 0000:00:01.0: enabling device (0000 -> 0003)
+[    3.547564] virtio_blk virtio1: 4/0/0 default/read/poll queues
+[    3.556714] virtio_blk virtio1: [vda] 33554432 512-byte logical blocks (17.2 GB/16.0 GiB)
+[    3.565620]  vda: vda1 vda2 vda3
+[    6.168692] EXT4-fs (vda3): orphan cleanup on readonly fs
+[    6.173756] EXT4-fs (vda3): mounted filesystem 3970aeed-e84f-42b1-8bff-bdc4dd3a6038 ro with ordered data mode. Quota mode: none.
+[    6.180560] Mounting root: ok.
+ok.
+
+   OpenRC 0.54.2 is starting up Linux 6.6.48-0-lts (aarch64)
+
+ * /proc is already mounted
+ * Mounting /run ... [ ok ]
+ * /run/openrc: creating directory
+ * /run/lock: creating directory
+ * /run/lock: correcting owner
+ * Caching service dependencies ... [ ok ]
+ * Caching service dependencies ... [ ok ]
+ * Clock skew detected with `/etc/init.d'
+ * Adjusting mtime of `/run/openrc/deptree' to Mon Sep  2 00:10:50 2024
+
+ * WARNING: clock skew detected!
+ * Remounting devtmpfs on /dev ... [ ok ]
+ * Mounting /dev/mqueue ... [ ok ]
+ * Mounting security filesystem ... [ ok ]
+ * Mounting debug filesystem ... [ ok ]
+ * Mounting persistent storage (pstore) filesystem ... [ ok ]
+ * Starting busybox mdev ... [ ok ]
+ * Scanning hardware for mdev ... [ ok ]
+ * Loading hardware drivers ... [ ok ]
+ * WARNING: clock skew detected!
+ * Setting the local clock based on last shutdown time ... [ ok ]
+ * Loading modules ... [ ok ]
+ * Checking local filesystems  .../dev/vda3: clean, 65649/913920 files, 493690/3653888 blocks
+/dev/vda1: clean, 663/76912 files, 91405/307200 blocks
+ [ ok ]
+ * Remounting root filesystem read/write ... [ ok ]
+ * Remounting filesystems ... [ ok ]
+ * Activating swap devices ... [ ok ]
+ * Mounting local filesystems ... [ ok ]
+ * Configuring kernel parameters ... [ ok ]
+ * Creating user login records ... [ ok ]
+ * Setting hostname ... [ ok ]
+ * Setting keymap ... [ ok ]
+ * Starting networking ... *   lo ... [ ok ]
+ *   eth0 ...udhcpc: started, v1.36.1
+udhcpc: broadcasting discover
+udhcpc: broadcasting select for 10.0.2.15, server 10.0.2.2
+udhcpc: lease of 10.0.2.15 obtained from 10.0.2.2, lease time 86400
+ [ ok ]
+ * Seeding random number generator ... * Seeding 256 bits and crediting
+ * Saving 256 bits of creditable seed for next boot
+ [ ok ]
+ * Starting busybox syslog ... [ ok ]
+ * WARNING: clock skew detected!
+ * Starting busybox crond ... [ ok ]
+ * Starting Docker Daemon ... [ ok ]
+ * Starting busybox ntpd ... [ ok ]
+ * Starting sshd ... [ ok ]
+
+Welcome to Alpine Linux 3.21.0_alpha20240807 (edge)
+Kernel 6.6.48-0-lts on an aarch64 (/dev/ttyAMA0)
+
+demo login: 
+```
+
+Go ahead and login as your userid. We will stop logging in as root at this
+time.
+
+```
+demo login: scott5
+Password: 
+Welcome to Alpine!
+
+The Alpine Wiki contains a large amount of how-to guides and general
+information about administrating Alpine systems.
+See <https://wiki.alpinelinux.org/>.
+
+You can setup the system with the command: setup-alpine
+
+You may change this message by editing /etc/motd.
+
+scott5:~$ docker ps --all
+CONTAINER ID   IMAGE                               COMMAND                CREATED          STATUS                      PORTS                                       NAMES
+ea47d0487b7e   hello-world                         "/hello"               11 minutes ago   Exited (0) 11 minutes ago                                               elastic_haibt
+scott5:~$ 
+```
+
+Assuming you are also on the same physical network as your Pi, get hold of your
+IP address and try to ssh in from your laptop.
+
+On the Pi, isue the `ip a` command. 
+
+```
+ip a
+```
+
+You may notice more interfaces than you expected. Time for a little system
+configuration. Specifically, disable root login over ssh (we never did that,
+but we configured for it if someone didn't have a serial console port). We
+probably want to disable IPv6 as well, unless you are using it in your network.
+
+```
+doas sed -i 's/PermitRootLogin yes/PermitRootLogin no/' /etc/ssh/sshd_config
+doas rc-service sshd restart
+echo "net.ipv6.conf.all.disable_ipv6=1" | doas tee /etc/sysctl.d/disable_ipv6.conf
+doas sysctl -w net.ipv6.conf.all.disable_ipv6=1 
+doas rc-update add sysctl default
+```
+
+if you do an `ip a` now, you will see that IPv6 is no longer enabled.
+
+```
+scott5:~$ ip a
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP qlen 1000
+    link/ether b8:27:eb:0b:d3:01 brd ff:ff:ff:ff:ff:ff
+    inet 10.9.15.161/21 brd 10.9.15.255 scope global eth0
+       valid_lft forever preferred_lft forever
+3: wlan0: <BROADCAST,MULTICAST> mtu 1500 qdisc noop state DOWN qlen 1000
+    link/ether b8:27:eb:5e:86:54 brd ff:ff:ff:ff:ff:ff
+4: docker0: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc noqueue state DOWN 
+    link/ether 02:42:a8:79:48:16 brd ff:ff:ff:ff:ff:ff
+    inet 172.17.0.1/16 brd 172.17.255.255 scope global docker0
+       valid_lft forever preferred_lft forever
+scott5:~$ 
+```
+
+At this point, reboot the system and ensure that IPv6 is not running.
+
+```
+reboot
+```
+
+After rebooting, login and test.
+
+```
+Welcome to Alpine Linux 3.20
+Kernel 6.6.49-0-rpi on an aarch64 (/dev/ttyS0)
+
+project1 login: scott5
+Password: 
+Welcome to Alpine!
+
+The Alpine Wiki contains a large amount of how-to guides and general
+information about administrating Alpine systems.
+See <https://wiki.alpinelinux.org/>.
+
+You can setup the system with the command: setup-alpine
+
+You may change this message by editing /etc/motd.
+
+project1:~$ ip a
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP qlen 1000
+    link/ether b8:27:eb:0b:d3:01 brd ff:ff:ff:ff:ff:ff
+    inet 10.9.15.161/21 brd 10.9.15.255 scope global eth0
+       valid_lft forever preferred_lft forever
+3: wlan0: <BROADCAST,MULTICAST> mtu 1500 qdisc noop state DOWN qlen 1000
+    link/ether b8:27:eb:5e:86:54 brd ff:ff:ff:ff:ff:ff
+4: docker0: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc noqueue state DOWN 
+    link/ether 02:42:2e:e2:1a:a6 brd ff:ff:ff:ff:ff:ff
+    inet 172.17.0.1/16 brd 172.17.255.255 scope global docker0
+       valid_lft forever preferred_lft forever
+project1:~$ 
+```
+
+Congratulations, we now have a Pi that has:
+
+* A non-root user that has `doas` capability
+* Docker running
+* IPv6 disabled
+* Reachable from the network
+
+You have completed this section.
