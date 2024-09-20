@@ -18,6 +18,7 @@ Since we setup the package manager previously, we should add a few packages:
 - git
 - vim
 - lsblk (if it is not already installed)
+- doas
 
 ```
 apk add git vim lsblk doas
@@ -38,8 +39,12 @@ Create the doas configuration, as it is empty by default.
 echo "permit persist :wheel" > /etc/doas.d/doas.conf
 ```
 
-Once again, slight differences in how we manage users. Add a user for yourself
-like this:
+Once again, slight differences in how we manage users.
+
+In the following command, "User Name" typically means "firstname lastname" and
+userid means the userid you will use.
+
+Add a user for yourself like this:
 
 ```
 adduser -g "User Name" -s /bin/ash userid
@@ -48,7 +53,8 @@ adduser -g "User Name" -s /bin/ash userid
 You can pick what you will put in here, I typically just add myself for
 convenience. We will add a service user in a later step.
 
-In order to allow your user to do things as root, you need to add it to the `wheel` group. 
+In order to allow your user to do things as root, you need to add it to the
+`wheel` group. 
 
 ```
 adduser userid wheel
@@ -56,7 +62,8 @@ adduser userid wheel
 
 See, different from RHEL.
 
-At this point, you have all of the basics you need to get started on making this an appliance system.
+At this point, you have all of the basics you need to get started on making
+this an appliance system.
 
 First, have a look at how much disk space you are using:
 
@@ -64,7 +71,8 @@ First, have a look at how much disk space you are using:
 df -h
 ```
 
-te a bit smaller than an install you are used to isn't it? We will be adding more software later, but this is the core of what we need for operation.
+It is quite a bit smaller than any install you are used to isn't it? We will be
+adding more software later, but this is the core of what we need for operation.
 
 === Docker Installation
 
@@ -149,9 +157,11 @@ If the docker test run didn't work, we should pause for troubleshooting.
 
 === Test your userid
 
-Logout from the root account. Once you get the login prompt, login as your userid.
+Logout from the root account. Once you get the login prompt, login as your
+userid.
 
-Once logged in, you should test that you can operate with root capability. The next command will reboot the Pi, which will prove a couple of things:
+Once logged in, you should test that you can operate with root capability. The
+next command will reboot the Pi, which will prove a couple of things:
 
 . You can run commands as root with `doas`
 . The docker system will start up automatically after a reboot
@@ -175,6 +185,7 @@ scott5:~$ [ 5130.924070] reboot: Restarting system
 [    0.000000] NUMA: No NUMA configuration found
 [    0.000000] NUMA: Faking a node at [mem 0x0000000040000000-0x000000007fffffff]
 
+                                   _      _      _           _
  _ __ ___   __ _ _ __  _   _    __| | ___| | ___| |_ ___  __| |
 | '_ ` _ \ / _` | '_ \| | | |  / _` |/ _ \ |/ _ \ __/ _ \/ _` |
 | | | | | | (_| | | | | |_| | | (_| |  __/ |  __/ ||  __/ (_| |
@@ -321,7 +332,7 @@ scott5:~$
 At this point, reboot the system and ensure that IPv6 is not running.
 
 ```
-reboot
+doas reboot
 ```
 
 After rebooting, login and test.
