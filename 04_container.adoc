@@ -17,7 +17,7 @@ build a container to provide.
 Well, I once had a job at a local cable tv provider and I was hired to create a
 Poc for a local advertising channel. They also had their own local community
 news channel that did not use any special software. I was fascinated with it
-and enjoyed workign there. I got to mess with some broadcast equipment, a title
+and enjoyed working there. I got to mess with some broadcast equipment, a title
 generator, a frame caputure device, commercial video cameras, and a few other
 odds and ends. They wanted me to go full time, but I thought I should do
 something a little different
@@ -134,7 +134,7 @@ image::images/runningwc.png[actual image]
 
 If you append a /config to the URL, you will get some configuration pages. We
 can discuss them at this point. You will want to do that, as well as make it
-your own. It supports playing music as well, so I have a few pubblic domain,
+your own. It supports playing music as well, so I have a few public domain,
 royalty free jazz tracks we can test with. That will not be placed here for
 anyone to find. I will have the link to the site in the reference list you will
 see later.
