@@ -1,0 +1,184 @@
+== Building a Kiosk
+
+What do you do with an old TV? These days, it is probably a LCD panel, but this
+will work with an old CRT TV as well. In that case we need to get the composite
+video out and connect that, but in modern times, we have HDMI interfaces. There
+is a lot more to getting the composite video working, so that is a future item
+if anyone in interested.
+
+There were questions regarding the Pi HDMI interface, so now we have a use for
+it.
+
+=== But First...
+
+Who noticed that sshd was listening on IPv6 in the last section?
+
+We should fix that. At least this is a simple fix. Log onto the pi and issue
+the following commands:
+
+```
+doas sed -i 's/#AddressFamily any/AddressFamily inet/' /etc/ssh/sshd_config
+doas rc-service sshd restart
+```
+
+Now check to see if there is a ssh port listening on `:::22`
+
+```
+netstat -ant
+```
+
+Now that we have corrected that oversight, we can continue.
+
+==== The Pi Console
+
+If you connect a modern display to the Pi, add a keyboard, and maybe a mouse,
+you have a text console you can use for whatever. Feel free to try it out. You
+might notice it is not much better than the serial console at this point, but
+you do not need a serial adapter and other devices.
+
+Normally, the Pi has a GUI running and you don't see this.
+
+=== Setting up X11
+
+As we don't have a GUI running, if you plugged in a monitor (or TV) to the Pi,
+you would see a login banner on the screen. That is kind of boring, so we will
+do one better. We need a GUI to display a browser running in kiosk mode. If you
+don't know what that is, it is basically digital signage without spending a lot
+of money.
+
+The first thing to do is enable a GUI screen, so we need the X11 software.
+
+NOTE: This is a very minimal install, just enough to support what we are trying
+to do here. There is a full X11 setup, but we are not going there at this time.
+
+Once again, Alpine has a utility command to take care of the hard part.
+
+```
+doas setup-xorg-base
+```
+
+Once that has installed, we need some drivers.
+
+```
+doas apk add mesa-gles mesa-egl \
+         xf86-video-fbdev \
+         xf86-video-vesa dbus \
+         setxkbmap kbd xrandr xset\
+         unclutter-xfixes
+```
+
+We need to add some configuration items to `usercfg.txt`
+
+```
+echo "dtoverlay=vc4-fkms-v3d" | doas tee -a /media/sda1/usercfg.txt
+echo "gpu_mem=256" | doas tee -a /media/sda1/usercfg.txt
+```
+
+Now we need to add a `service user`, but we will place the user in /home
+instead of an isolated location.
+
+```
+doas adduser kiosk
+```
+
+Now we need to edit the `inittab` file to tell it that instead of spawning a
+terminal on tty1 (the console), we will be logging in a user on it.
+
+```
+doas sed -i 's/^tty1/#tty1/' /etc/inittab
+doas sed -i '/^#tty1/a tty1::respawn:/bin/login -f kiosk' /etc/inittab
+```
+
+NOTE: We are preserving the original entry so that you can use the console if
+necessary later. You may never use it, but it is there, just swap the comments
+and restart inittab.
+
+We will be using chromium as the kiosk browser, simply because most of the
+guides use it and rather than spend time on figuring out the variations on
+firefox, I went with the easy route. You can try firefox some other time if you
+want.
+
+```
+doas apk add chromium
+```
+
+Now, we configure the user (`kiosk`) to have some X11 settings and what the
+environment is supposed to do.
+
+```
+cat <<EOF | doas tee /home/kiosk/.profile
+#!/bin/sh
+# start X server
+# and hide the messages as it starts, it is untidy while it starts
+exec startx
+EOF
+
+doas cat <<EOF | doas tee /home/kiosk/.xinitrc
+#!/bin/sh
+
+# turn off screensaver
+xset -dpms
+xset s off
+xset s noblank
+
+# disable mouse pointer after 1 second
+unclutter-xfixes --timeout 1 &
+
+# screen size
+width="1920"
+height="1080"
+
+# url
+url="https://ovsage.org/testpattern.svg"
+
+exec chromium-browser \$url \\
+     --window-size=\$width,\$height \\
+     --window-position=0,0 \\
+     --kiosk \\
+     --no-sandbox \\
+     --full-screen \\
+     --incognito \\
+     --noerrdialogs \\
+     --disable-translate \\
+     --no-first-run \\
+     --fast \\
+     --fast-start \\
+     --ignore-gpu-blacklist \\
+     --disable-quic \\
+     --enable-fast-unload \\
+     --enable-tcp-fast-open \\
+     ---enable-native-gpu-memory-buffers \\
+     --enable-gpu-rasterization \\
+     --enable-zero-copy \\
+     --disable-infobars \\
+     --disable-features=TranslateUI \\
+     --disk-cache-dir=/tmp
+EOF
+```
+
+Set the file ownership and permissions:
+
+```
+doas chown kiosk:kiosk /home/kiosk/.profile /home/kiosk/.xinitrc 
+doas chmod u+x /home/kiosk/.profile /home/kiosk/.xinitrc
+```
+
+In order to open the screen, since we do not have a greeter running, we need to
+permit a non-root user to do so:
+
+```
+cat <<EOF | doas tee /etc/X11/Xwrapper.config
+needs_root_rights = yes
+EOF
+```
+
+=== Testing Time
+
+Assuming we did all of that correctly, we can plug in a monitor (1080p) and see
+if we get a web page on the monitor.
+
+```
+doas reboot
+```
+
+Congratulations, you have a kiosk!
