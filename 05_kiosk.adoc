@@ -129,7 +129,7 @@ width="1920"
 height="1080"
 
 # url
-url="https://ovsage.org/testpattern.svg"
+url="https://ovsage.org/testpattern"
 
 exec chromium-browser \$url \\
      --window-size=\$width,\$height \\
