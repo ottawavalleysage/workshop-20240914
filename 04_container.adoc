@@ -125,8 +125,10 @@ tcp        0      0 0.0.0.0:22              0.0.0.0:*               LISTEN
 tcp        0      0 :::22                   :::*                    LISTEN      
 ```
 
-So point your laptop browser to the Pi at port 8600. You should have a
-weather channel page running:
+So point your laptop browser to the Pi at port 8600. The image below shows
+`localhost`, as I was using an emulator and had an emulator in use. If you
+issue a `ip a` and look for the eth0 interface and address. Use that address
+and port 8600. You should have a weather channel page running:
 
 image::images/runningwc.png[actual image]
 
