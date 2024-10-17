@@ -124,7 +124,8 @@ xset s noblank
 # disable mouse pointer after 1 second
 unclutter-xfixes --timeout 1 &
 
-# screen size
+# screen size - adjust accordingly for your monitor if it does not support
+# 1080p
 width="1920"
 height="1080"
 
