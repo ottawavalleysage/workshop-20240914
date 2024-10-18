@@ -1,0 +1,117 @@
+== Final Steps
+
+At this point, You are probably thinking something along the line of:
+
+.After all that work, the web page is underwhelming:
+[quote,Impatient Users Everywhere,ovSAGE Workshop 2024]
+Well, that is not an interesting web page to be viewing, if only I had an
+interesting thing to display. Wait a moment, didn't I create a weather channel
+for my own personal use? Maybe I should use that.
+
+NOTE: Make sure your container is running.
+
+Check it with:
+
+```
+docker ps --all
+```
+
+It should be, as we told it to restart if it failed.
+
+Once you have confirmed that, you can easily edit the `.xinitrc` in the
+`/home/kiosk` directory to change the url to `localhost:8600`
+
+```
+doas sed -i 's/https:\/\/ovsage.org\/testpattern/http:\/\/localhost:8600/ \
+            /home/kiosk/.xinitrc
+```
+
+Now, we need to logout the kiosk user.
+
+```
+doas pkill -u kiosk
+```
+
+This will kill all processes running as `kiosk`. Since `/etc/inittab` has a
+respawn setting for the console, it will immediately restart the browser. We
+should now have the weather channel running.
+
+=== Improvements
+
+Items to notice:
+
+* Hmm, that does not fill the screen, so maybe we can fix that?
+* Also, in between the start up and the browser, we have a lot of ugly text on the screen. Maybe we can do something with that?
+
+==== Filling the screen
+
+That requires making a change to the CSS in the weatherchannel code. 
+
+
+==== Making the startup of the browser a little less cryptic
+
+This will be easier if we create a text banner, so we will do it retro style,
+like a Unix banner from the '80s
+
+```
+doas apk add figlet
+doas apk add boxes --repository=https://dl-cdn.alpinelinux.org/alpine/edge/testing
+```
+
+What do they do>
+
+Try these commands, there are a lot of variations, but this is what we will use
+for this project. Feel free to change it later.
+
+```
+figlet -f basic "Hello"
+```
+
+and
+
+```
+echo "hello" | boxes -d stone
+```
+
+So, we can create a banner that states we are loading...
+
+```
+echo "Kiosk Starting" | figlet -f banner -c | boxes -d stone
+```
+
+So we would do something like this in order to create a login banner that makes
+sense.
+
+```
+rm -f /etc/motd
+echo "Please Wait" | figlet -f small -c > /tmp/message1
+echo "Kiosk Initializing" | figlet -f banner -c >> /tmp/message1
+cat /tmp/message1 | boxes -d ansi-double > /etc/motd
+rm -f /tmp/message1
+```
+
+Now we should clean the X11 initialization os it does not show the default
+output. Overwriting is easier than regexes for the changes.
+
+```
+cat <<EOF | doas tee /home/kiosk/.profile
+#!/bin/sh
+# start X server
+# and hide the messages as it starts, it is untidy while it starts
+# When debugging, do not redirect the messages
+exec startx 2>&1 > /dev/null
+EOF
+
+
+
+=== Future Enhancements
+
+* Find a way to get the software to allow the ticker tape to be updated from outside the web interface
+* Add a power button that takes the Pi from standby to full operation and can power it down again
+* Distribute it to your in-wall cable so all TVs can tune to it.
+
+There are a lot of things that can be done here.
+
+=== Finit!
+
+And this concludes the project.
