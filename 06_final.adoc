@@ -8,6 +8,8 @@ Well, that is not an interesting web page to be viewing, if only I had an
 interesting thing to display. Wait a moment, didn't I create a weather channel
 for my own personal use? Maybe I should use that.
 
+ 
+
 NOTE: Make sure your container is running.
 
 Check it with:
