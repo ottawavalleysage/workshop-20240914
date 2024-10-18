@@ -24,3 +24,7 @@ See the parts.adoc file. It has a little information and a list of parts. You do
 ## Will there be instructions?
 
 Absolutely. They will be uploaded for each section as we get to it. I don't want people jumping too far ahead as there are many ways to mess it up.
+
+## Warnings...
+
+GitHub is adding copy/paste icons for the text that is in `preformatted` mode. While this is considered normal, it may cause errors if you copy/paste lines with multiple commands. You should copy the lines one at a time.
