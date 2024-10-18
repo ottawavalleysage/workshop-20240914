@@ -84,9 +84,9 @@ sense.
 
 ```
 doas rm -f /etc/motd
-echo "Please Wait" | doas figlet -f small -c > /tmp/message1
-echo "Kiosk Initializing" | doas figlet -f banner -c >> /tmp/message1
-cat /tmp/message1 | doas boxes -d ansi-double > /etc/motd
+echo "Please Wait" | figlet -f small -c > /tmp/message1
+echo "Kiosk Initializing" | figlet -f banner -c >> /tmp/message1
+cat /tmp/message1 | boxes -d ansi-double | doas tee /etc/motd
 rm -f /tmp/message1
 ```
 
