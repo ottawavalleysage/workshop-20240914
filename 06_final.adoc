@@ -47,6 +47,8 @@ Items to notice:
 
 That requires making a change to the CSS in the weatherchannel code. 
 
+THIS PART NEEDS TO BE ADDED!!!!!
+
 
 ==== Making the startup of the browser a little less cryptic
 
@@ -101,7 +103,7 @@ cat <<EOF | doas tee /home/kiosk/.profile
 # When debugging, do not redirect the messages
 exec startx 2>&1 > /dev/null
 EOF
-
+```
 
 
 === Future Enhancements
