@@ -22,7 +22,7 @@ Once you have confirmed that, you can easily edit the `.xinitrc` in the
 `/home/kiosk` directory to change the url to `localhost:8600`
 
 ```
-doas sed -i 's/https:\/\/ovsage.org\/testpattern/http:\/\/localhost:8600/ \
+doas sed -i 's/https:\/\/ovsage.org\/testpattern/http:\/\/localhost:8600/' \
             /home/kiosk/.xinitrc
 ```
 
@@ -83,10 +83,10 @@ So we would do something like this in order to create a login banner that makes
 sense.
 
 ```
-rm -f /etc/motd
-echo "Please Wait" | figlet -f small -c > /tmp/message1
-echo "Kiosk Initializing" | figlet -f banner -c >> /tmp/message1
-cat /tmp/message1 | boxes -d ansi-double > /etc/motd
+doas rm -f /etc/motd
+echo "Please Wait" | doas figlet -f small -c > /tmp/message1
+echo "Kiosk Initializing" | doas figlet -f banner -c >> /tmp/message1
+cat /tmp/message1 | doas boxes -d ansi-double > /etc/motd
 rm -f /tmp/message1
 ```
 
