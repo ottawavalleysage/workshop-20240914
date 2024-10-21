@@ -68,7 +68,7 @@ Try these commands, there are a lot of variations, but this is what we will use
 for this project. Feel free to change it later.
 
 ```
-figlet -f basic "Hello"
+figlet "Hello"
 ```
 
 and
